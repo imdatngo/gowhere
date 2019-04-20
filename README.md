@@ -22,16 +22,16 @@ The simple way:
 import "github.com/imdatngo/gowhere"
 
 plan := gowhere.Where(map[string]interface{}{
-    "name_contains": "Gopher",
+    "name__contains": "Gopher",
     "budget__gte": 1000,
     "date__between": []interface{}{"2019-04-13", "2019-04-15"},
 })
 
 plan.SQL()
-// ("name" = ? AND "budget" >= ? and "date" BETWEEN ? AND ?)
+// ("name" LIKE ? AND "budget" >= ? and "date" BETWEEN ? AND ?)
 
 plan.Vars()
-// [Gopher 1000 2019-04-13 2019-04-15]
+// [%Gopher% 1000 2019-04-13 2019-04-15]
 ```
 
 The advanced way:
@@ -78,6 +78,35 @@ plan.SQL()
 plan.Vars()
 // [%Gopher% 1000 2019-04-13 2019-04-15 2019-04-19 2 10]
 ```
+
+## Operator ##
+
+For example: `"name__startswith"`, `name` is the field(column) and `startswith` is the operator. Django developer might find this familiar ;)
+
+Operator is an user friendly name for a specific SQL operator. It's a suffix which added into the field to reduce the complexity from input schema, yet flexible enough to generate complex conditions.
+
+Operator is optional. If not given, it's set to:
+- `isnull` if the value is `nil`. E.g: `{"name": nil}` => sql, vars: `name IS NULL, []`
+- `in` if the value is slice or array. E.g: `{"id": []int{1, 2, 3}}` => `id in (?), [[1 2 3]]`
+- `exact` if otherwise. E.g: `{"name": "Gopher"}` => `name = ?, [Gopher]`
+
+Built-in operators:
+- `exact`: Exact match, using `=` operator.
+- `iexact`: Case-insensitive exact match, wrap both column and value with `lower()` function.
+- `gt`: Greater than
+- `gte`: Greater than or equal to
+- `lt`: Less than
+- `lte`: Less than or equal to
+- `startswith`: Case-sensitive starts-with, auto cast value to string with `%` suffix
+- `istartswith`: Case-insensitive starts-with
+- `endswith`: Case-sensitive ends-with, auto cast value to string with `%` prefix
+- `iendswith`: Case-insensitive ends-with
+- `contains`: Case-insensitive containment test, auto cast value to string with both `%` suffix, prefix
+- `icontains`: Case-sensitive containment test
+- `in`: In a given slice, array
+- `date`: For datetime fields, casts the value as date
+- `between`: For datetime fields, range test
+- `isnull`: Takes either True or False, which correspond to SQL queries of IS NULL and IS NOT NULL, respectively.
 
 ## TODO ##
 
