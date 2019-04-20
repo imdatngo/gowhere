@@ -54,7 +54,7 @@ plan.Where(map[string]interface{}{
     "budget__gte": 1000,
 })
 
-// a slice will be "OR" conditions, check here below for more advanced way to build this "OR" conditions
+// a slice will be "OR" conditions
 plan.Where([]map[string]interface{}{
     {"started_at__date": "2019-04-13"},
     {"started_at__date": "2019-04-15"},
@@ -85,3 +85,9 @@ plan.Vars()
 - [ ] Full tests with 100% code coverage
 - [ ] Ability to add custom operators
 - [ ] Manipulate the conditions? Such as `HasCondition()`, `UpdateCondition()`, `RemoveCondition()`?
+
+## License ##
+
+© Dat Ngo, 2019~time.Now()
+
+Released under the [MIT License](./LICENSE)

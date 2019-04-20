@@ -1,1 +1,1 @@
-module gowhere
+module github.com/imdatngo/gowhere
