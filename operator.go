@@ -54,10 +54,10 @@ var (
 	defaultOperator = &Operator{}
 	// operatorsList defines the list of built-in operators
 	operatorsList = map[string]*Operator{
-		"exact":  defaultOperator,
-		"iexact": &Operator{Template: "LOWER(%s) %s LOWER(?)"},
-		// "notexact":  &Operator{Operator: "<>"},
-		// "inotexact": &Operator{Operator: "<>", Template: "LOWER(%s) %s LOWER(?)"},
+		"exact":     defaultOperator,
+		"iexact":    &Operator{Template: "LOWER(%s) %s LOWER(?)"},
+		"notexact":  &Operator{Operator: "<>"},
+		"inotexact": &Operator{Operator: "<>", Template: "LOWER(%s) %s LOWER(?)"},
 
 		"gt":  &Operator{Operator: ">"},
 		"lt":  &Operator{Operator: "<"},
@@ -105,6 +105,7 @@ var (
 		},
 		"in": &Operator{
 			Operator: "IN",
+			Template: "%s %s (?)",
 			ModValue: func(value interface{}) interface{} {
 				return Utils.ToSlice(value)
 			},
