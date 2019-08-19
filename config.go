@@ -13,6 +13,8 @@ type Config struct {
 	// The map of column aliases to be replaced when build the SQL clause. Use cases:
 	// Example: {"name": "foo.name", "bname": "bar.name"}
 	ColumnAliases map[string]string
+	// Custom conditions allow full access on the condition generating
+	CustomConditions map[string]CustomConditionFn
 
 	// sort the conditions in map by field for testing purposes only
 	sort bool
@@ -21,10 +23,18 @@ type Config struct {
 var (
 	// DefaultConfig is the default configuration of the planner
 	DefaultConfig = Config{
-		Separator:     "__",
-		Dialect:       DialectPostgreSQL,
-		ColumnAliases: make(map[string]string),
+		Separator:        "__",
+		Dialect:          DialectPostgreSQL,
+		ColumnAliases:    make(map[string]string),
+		CustomConditions: make(map[string]CustomConditionFn),
 		// Strict: false,
 		// Table: "",
 	}
+)
+
+// Modes to set configurations
+const (
+	OverwriteMode = 'o'
+	AppendMode    = 'a'
+	WriteMode     = 'w'
 )

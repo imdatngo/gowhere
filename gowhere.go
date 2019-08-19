@@ -9,7 +9,14 @@ func WithConfig(conf Config) *Plan {
 		conf.Dialect = DefaultConfig.Dialect
 	}
 	if conf.ColumnAliases == nil {
-		conf.ColumnAliases = DefaultConfig.ColumnAliases
+		for key, val := range DefaultConfig.ColumnAliases {
+			conf.ColumnAliases[key] = val
+		}
+	}
+	if conf.CustomConditions == nil {
+		for key, val := range DefaultConfig.CustomConditions {
+			conf.CustomConditions[key] = val
+		}
 	}
 
 	return &Plan{config: &conf, conditions: &andConditions{naked: true}}
@@ -18,14 +25,4 @@ func WithConfig(conf Config) *Plan {
 // Where is shortcut to create new plan with default configurations
 func Where(cond interface{}, vars ...interface{}) *Plan {
 	return WithConfig(DefaultConfig).Where(cond, vars...)
-}
-
-// WhereMySQL returns a plan with given conditions for MySQL, using default configurations
-func WhereMySQL(cond interface{}, vars ...interface{}) *Plan {
-	return WithConfig(Config{Dialect: DialectMySQL}).Where(cond, vars...)
-}
-
-// WherePostgreSQL returns a plan with given conditions for PostgreSQL, using default configurations
-func WherePostgreSQL(cond interface{}, vars ...interface{}) *Plan {
-	return WithConfig(Config{Dialect: DialectPostgreSQL}).Where(cond, vars...)
 }

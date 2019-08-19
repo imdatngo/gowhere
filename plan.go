@@ -13,8 +13,11 @@ type Plan struct {
 
 // Where adds more condition(s) to the current Plan, using AND operator
 func (p *Plan) Where(cond interface{}, vars ...interface{}) *Plan {
-	condition := p.toCondition(cond, vars, false)
-	if condition == nil {
+	condition, err := toCondition(cond, vars, false)
+	if err != nil {
+		if p.config.Strict {
+			p.Error = &InvalidCond{cond, vars}
+		}
 		return p
 	}
 
@@ -24,10 +27,18 @@ func (p *Plan) Where(cond interface{}, vars ...interface{}) *Plan {
 	return p
 }
 
+// And is the alias of Where
+func (p *Plan) And(cond interface{}, vars ...interface{}) *Plan {
+	return p.Where(cond, vars...)
+}
+
 // Or wraps all current conditions and ties with the new "cond" by OR operator
 func (p *Plan) Or(cond interface{}, vars ...interface{}) *Plan {
-	condition := p.toCondition(cond, vars, false)
-	if condition == nil {
+	condition, err := toCondition(cond, vars, false)
+	if err != nil {
+		if p.config.Strict {
+			p.Error = &InvalidCond{cond, vars}
+		}
 		return p
 	}
 
@@ -40,8 +51,11 @@ func (p *Plan) Or(cond interface{}, vars ...interface{}) *Plan {
 
 // Not works similar to Where but reverses the condition operator(s)
 func (p *Plan) Not(cond interface{}, vars ...interface{}) *Plan {
-	condition := p.toCondition(cond, vars, true)
-	if condition == nil {
+	condition, err := toCondition(cond, vars, true)
+	if err != nil {
+		if p.config.Strict {
+			p.Error = &InvalidCond{cond, vars}
+		}
 		return p
 	}
 
@@ -52,7 +66,7 @@ func (p *Plan) Not(cond interface{}, vars ...interface{}) *Plan {
 }
 
 // Build builds the SQL clause and vars with given conditions
-func (p *Plan) Build() *Plan {
+func (p *Plan) Build() (rp *Plan) {
 	defer func() {
 		if err := recover(); err != nil {
 			switch e := err.(type) {
@@ -65,6 +79,8 @@ func (p *Plan) Build() *Plan {
 				// critical error
 				p.Error = err.(error)
 			}
+			p.built = false
+			rp = p
 		}
 	}()
 
@@ -90,55 +106,79 @@ func (p *Plan) Vars() []interface{} {
 	return p.vars
 }
 
-// // SetTable set the `Table` config value
-// func (p *Plan) SetTable(value string) *Plan {
-// 	p.config.Table = value
-// 	return p
-// }
+// SetTable updates the `Table` config value
+func (p *Plan) SetTable(value string) *Plan {
+	p.config.Table = value
+	p.built = false
+	return p
+}
 
-// // SetColumnAliases set the `Table` config value
-// func (p *Plan) SetColumnAliases(aliases map[string]string, mode ...rune) *Plan {
-// 	m := 'a'
-// 	if len(mode) > 0 && (mode[0] == 'o' || mode[0] == 'w') {
-// 		m = mode[0]
-// 	}
+// SetColumnAliases updates the `ColumnAliases` config value
+func (p *Plan) SetColumnAliases(aliases map[string]string, mode ...rune) *Plan {
+	m := AppendMode
+	if len(mode) > 0 && (mode[0] == OverwriteMode || mode[0] == WriteMode) {
+		m = mode[0]
+	}
 
-// 	if m == 'o' {
-// 		p.config.ColumnAliases = aliases
-// 	} else {
-// 		for key, val := range aliases {
-// 			if _, ok := p.config.ColumnAliases[key]; ok && m == 'a' {
-// 				continue
-// 			}
-// 			p.config.ColumnAliases[key] = val
-// 		}
-// 	}
+	if m == OverwriteMode {
+		p.config.ColumnAliases = aliases
+	} else {
+		for key, val := range aliases {
+			if _, ok := p.config.ColumnAliases[key]; ok && m == AppendMode {
+				continue
+			}
+			p.config.ColumnAliases[key] = val
+		}
+	}
 
-// 	return p
-// }
+	p.built = false
+	return p
+}
 
-// // se
+// SetCustomConditions updates the `CustomConditions` config values
+func (p *Plan) SetCustomConditions(aliases map[string]CustomConditionFn, mode ...rune) *Plan {
+	m := AppendMode
+	if len(mode) > 0 && (mode[0] == OverwriteMode || mode[0] == WriteMode) {
+		m = mode[0]
+	}
+
+	if m == OverwriteMode {
+		p.config.CustomConditions = aliases
+	} else {
+		for key, val := range aliases {
+			if _, ok := p.config.CustomConditions[key]; ok && m == AppendMode {
+				continue
+			}
+			p.config.CustomConditions[key] = val
+		}
+	}
+
+	p.built = false
+	return p
+}
 
 // toCondition convert given interface to correct condition type
-func (p *Plan) toCondition(cond interface{}, vars []interface{}, not bool) interface{} {
+func toCondition(cond interface{}, vars []interface{}, not bool) (condition, error) {
 	switch c := cond.(type) {
 	case map[string]interface{}:
-		return &mapConditions{value: c, not: not}
+		return &mapConditions{value: c, not: not}, nil
 	case []interface{}:
-		return &orConditions{value: c, not: not}
+		if len(c) >= 2 {
+			if cl, ok := c[0].(string); ok {
+				return &rawConditions{clause: cl, vars: c[1:]}, nil
+			}
+		}
+		return &orConditions{value: c, not: not}, nil
 	case []map[string]interface{}:
 		lenc := len(c)
 		v := make([]interface{}, lenc)
 		for i := 0; i < len(c); i++ {
 			v[i] = c[i]
 		}
-		return &orConditions{value: v, not: not}
+		return &orConditions{value: v, not: not}, nil
 	case string:
-		return &rawConditions{clause: c, vars: vars, not: not}
+		return &rawConditions{clause: c, vars: vars, not: not}, nil
 	default:
-		if p.config.Strict {
-			p.Error = &InvalidCond{cond: cond, vars: vars}
-		}
-		return nil
+		return nil, &InvalidCond{cond: cond, vars: vars}
 	}
 }

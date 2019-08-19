@@ -52,8 +52,9 @@ func (o *Operator) Build(field string, value interface{}, cfg *Config) (string, 
 
 var (
 	defaultOperator = &Operator{}
-	// operatorsList defines the list of built-in operators
-	operatorsList = map[string]*Operator{
+
+	// OperatorsList defines the list of built-in operators
+	OperatorsList = map[string]*Operator{
 		"exact":     defaultOperator,
 		"iexact":    &Operator{Template: "LOWER(%s) %s LOWER(?)"},
 		"notexact":  &Operator{Operator: "<>"},
@@ -150,7 +151,7 @@ var (
 )
 
 func findOperatorByName(name string) *Operator {
-	if op, ok := operatorsList[name]; ok {
+	if op, ok := OperatorsList[name]; ok {
 		if op.AliasOf != "" {
 			if alias := findOperatorByName(op.AliasOf); alias != nil {
 				return alias

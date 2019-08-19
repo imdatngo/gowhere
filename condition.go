@@ -31,6 +31,16 @@ type rawConditions struct {
 	not    bool
 }
 
+// condition represents the condition interface
+type condition interface {
+	build(cfg *Config) (string, []interface{})
+}
+
+// CustomConditionFn represents the func signature which provide full access on the condition generating.
+// Return value should be in form of condition, i.e a map or slice
+// Return nil will exclude the condition from result
+type CustomConditionFn func(key string, val interface{}, cfg *Config) interface{}
+
 func (ac *andConditions) build(cfg *Config) (string, []interface{}) {
 	sqls, vars := listBuild(ac.value, cfg)
 	sql := strings.Join(sqls, " AND ")
@@ -76,23 +86,43 @@ func (mc *mapConditions) build(cfg *Config) (string, []interface{}) {
 	vars := make([]interface{}, 0)
 
 	processFunc := func(key string, val interface{}) {
-		res := strings.Split(key, cfg.Separator)
-		column := processColumn(res[0], cfg)
-		var operator *Operator
-		if len(res) > 1 {
-			operator = findOperatorByName(res[1])
-		} else {
-			operator = findOperatorByValue(val)
-		}
+		var _sql string
+		var _vars []interface{}
 
-		if operator == nil {
-			if cfg.Strict {
-				panic(&InvalidCond{cond: key, vars: val})
+		if customCondFn, ok := cfg.CustomConditions[key]; ok {
+			rawCond := customCondFn(key, val, cfg)
+			if rawCond == nil {
+				return
 			}
-			return
-		}
+			cond, err := toCondition(rawCond, []interface{}{}, false)
+			if err != nil {
+				if cfg.Strict {
+					panic(&InvalidCond{cond: rawCond})
+				}
+				return
+			}
+			_sql, _vars = cond.build(cfg)
 
-		_sql, _vars := operator.Build(column, val, cfg)
+		} else {
+			res := strings.Split(key, cfg.Separator)
+			column := processColumn(res[0], cfg)
+			var operator *Operator
+			if len(res) > 1 {
+				operator = findOperatorByName(res[1])
+			} else {
+				operator = findOperatorByValue(val)
+			}
+
+			if operator == nil {
+				if cfg.Strict {
+					panic(&InvalidCond{cond: key, vars: val})
+				}
+				return
+			}
+
+			_sql, _vars = operator.Build(column, val, cfg)
+
+		}
 
 		if _sql != "" {
 			sqls = append(sqls, _sql)

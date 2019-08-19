@@ -44,9 +44,18 @@ plan := gowhere.WithConfig(gowhere.Config{
     Separator: "__",
     Dialect: gowhere.DialectPostgreSQL,
     Strict: true,
-    Table: "trips",
-    ColumnAliases: map[string]string{"name": "full_name"},
+    Table: "",
+    ColumnAliases: map[string]string{},
+    CustomConditions: map[string]CustomConditionFn{
+        "search": func(key string, val interface{}, cfg *gowhere.Config) interface{} {
+            val = "%" + val.(string) + "%"
+            return []interface{}{"lower(full_name) like ? OR lower(title) like ?", val, val}
+        },
+    },
 })
+
+// modify the config on the demands
+plan.SetTable("trips").SetColumnAliases(map[string]string{"name": "full_name"})
 
 // a map will be translated to "AND" conditions
 plan.Where(map[string]interface{}{
@@ -93,6 +102,8 @@ Operator is optional. If not given, it's set to:
 Built-in operators:
 - `exact`: Exact match, using `=` operator.
 - `iexact`: Case-insensitive exact match, wrap both column and value with `lower()` function.
+- `notexact`: Opposite of `exact`
+- `notiexact`: Opposite of `iexact`
 - `gt`: Greater than
 - `gte`: Greater than or equal to
 - `lt`: Less than
@@ -111,8 +122,9 @@ Built-in operators:
 ## TODO ##
 
 - [x] Publish!
+- [x] Ability to add custom operators
+- [x] Ability to add custom conditions
 - [ ] Full tests with 100% code coverage
-- [ ] Ability to add custom operators
 - [ ] Manipulate the conditions? Such as `HasCondition()`, `UpdateCondition()`, `RemoveCondition()`?
 
 ## License ##
