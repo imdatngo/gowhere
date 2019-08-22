@@ -9,11 +9,13 @@ func WithConfig(conf Config) *Plan {
 		conf.Dialect = DefaultConfig.Dialect
 	}
 	if conf.ColumnAliases == nil {
+		conf.ColumnAliases = make(map[string]string)
 		for key, val := range DefaultConfig.ColumnAliases {
 			conf.ColumnAliases[key] = val
 		}
 	}
 	if conf.CustomConditions == nil {
+		conf.CustomConditions = make(map[string]CustomConditionFn)
 		for key, val := range DefaultConfig.CustomConditions {
 			conf.CustomConditions[key] = val
 		}
