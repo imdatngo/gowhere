@@ -26,5 +26,5 @@ func WithConfig(conf Config) *Plan {
 
 // Where is shortcut to create new plan with default configurations
 func Where(cond interface{}, vars ...interface{}) *Plan {
-	return WithConfig(DefaultConfig).Where(cond, vars...)
+	return WithConfig(Config{}).Where(cond, vars...)
 }
