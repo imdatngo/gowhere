@@ -121,7 +121,7 @@ Built-in operators:
 - `between`: For datetime string fields, range test
 - `isnull`: Takes either True or False, which correspond to SQL
   queries of IS NULL and IS NOT NULL, respectively.
-- `datebetween`: For datetime range fields
+- `datebetween`: For query datetime range fields
 
 ## TODO
 
