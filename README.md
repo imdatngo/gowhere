@@ -1,4 +1,4 @@
-# SQL WHERE clause builder for Go #
+# SQL WHERE clause builder for Go
 
 `gowhere` is neither an ORM package nor full-featured SQL builder. It only provides a flexible and powerful way to build SQL WHERE string from a simple array/slice or a map.
 
@@ -6,7 +6,7 @@ The goal of this package is to create an adapter for frontend app to easily "que
 
 This package can also be used together with standard "database/sql" package or other ORM packages for better experience, if any :)
 
-## Install ##
+## Install
 
 ```bash
 go get -u github.com/imdatngo/gowhere
@@ -14,7 +14,7 @@ go get -u github.com/imdatngo/gowhere
 
 This package is dependency-free!
 
-## Usages ##
+## Usages
 
 The simple way:
 
@@ -88,18 +88,20 @@ plan.Vars()
 // [%Gopher% 1000 2019-04-13 2019-04-15 2019-04-19 2 10]
 ```
 
-## Operator ##
+## Operator
 
 For example: `"name__startswith"`, `name` is the field(column) and `startswith` is the operator. Django developer might find this familiar ;)
 
 Operator is an user friendly name for a specific SQL operator. It's a suffix which added into the field to reduce the complexity from input schema, yet flexible enough to generate complex conditions.
 
 Operator is optional. If not given, it's set to:
+
 - `isnull` if the value is `nil`. E.g: `{"name": nil}` => sql, vars: `name IS NULL, []`
 - `in` if the value is slice or array. E.g: `{"id": []int{1, 2, 3}}` => `id in (?), [[1 2 3]]`
 - `exact` if otherwise. E.g: `{"name": "Gopher"}` => `name = ?, [Gopher]`
 
 Built-in operators:
+
 - `exact`: Exact match, using `=` operator.
 - `iexact`: Case-insensitive exact match, wrap both column and value with `lower()` function.
 - `notexact`: Opposite of `exact`
@@ -116,10 +118,12 @@ Built-in operators:
 - `icontains`: Case-sensitive containment test
 - `in`: In a given slice, array
 - `date`: For datetime fields, casts the value as date
-- `between`: For datetime fields, range test
-- `isnull`: Takes either True or False, which correspond to SQL queries of IS NULL and IS NOT NULL, respectively.
+- `between`: For datetime string fields, range test
+- `isnull`: Takes either True or False, which correspond to SQL
+  queries of IS NULL and IS NOT NULL, respectively.
+- `datebetween`: For query datetime range fields
 
-## TODO ##
+## TODO
 
 - [x] Publish!
 - [x] Ability to add custom operators
@@ -127,7 +131,7 @@ Built-in operators:
 - [ ] Full tests with 100% code coverage
 - [ ] Manipulate the conditions? Such as `HasCondition()`, `UpdateCondition()`, `RemoveCondition()`?
 
-## License ##
+## License
 
 © Dat Ngo, 2019~time.Now()
 
