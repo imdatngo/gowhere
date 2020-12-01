@@ -147,6 +147,27 @@ var (
 				return fmt.Sprintf("%s %s", field, operator), []interface{}{}
 			},
 		},
+		"datebetween": &Operator{
+			CustomBuild: func(field string, value interface{}, cfg Config) (string, []interface{}) {
+				var from interface{}
+				var to interface{}
+
+				if vi, ok := value.([]interface{}); ok && len(vi) >= 2 {
+					from = vi[0]
+					to = vi[1]
+				} else if vs, ok := value.([]string); ok && len(vs) >= 2 {
+					from = vs[0]
+					to = vs[1]
+				} else if vt, ok := value.([]time.Time); ok && len(vt) >= 2 {
+					from = vt[0]
+					to = vt[1]
+				} else {
+					return "", []interface{}{}
+				}
+
+				return fmt.Sprintf("DATE(%s) BETWEEN ? AND ?", field), []interface{}{Utils.ToDate(from), Utils.ToDate(to)}
+			},
+		},
 	}
 )
 
